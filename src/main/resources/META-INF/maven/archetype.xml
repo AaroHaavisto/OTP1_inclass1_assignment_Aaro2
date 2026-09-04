@@ -1,0 +1,9 @@
+<archetype>
+  <id>OTP1_inclass1_assignment_Aaro</id>
+  <sources>
+    <source>src/main/java/App.java</source>
+  </sources>
+  <testSources>
+    <source>src/test/java/AppTest.java</source>
+  </testSources>
+</archetype>
