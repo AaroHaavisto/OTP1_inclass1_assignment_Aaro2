@@ -10,6 +10,7 @@ pipeline {
         PATH = "C:\\Program Files\\Docker\\Docker\\resources\\bin;${env.PATH}"
         DOCKERHUB_CREDENTIALS_ID = 'docker_ID'
         DOCKERHUB_REPO = 'aarohaavisto/temperature_converter'
+        DOCKER_IMAGE_TAG = 'latest'
     }
     stages {
         stage('Checkout') {
