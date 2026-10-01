@@ -43,6 +43,11 @@ pipeline {
                 jacoco()
             }
         }
+        stage('Copy Dependencies') {
+            steps {
+                bat 'mvn dependency:copy-dependencies -DoutputDirectory=target/dependency'
+            }
+        }
         stage('Build Docker Image') {
             steps {
                 script {
