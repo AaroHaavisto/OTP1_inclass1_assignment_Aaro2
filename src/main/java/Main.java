@@ -33,6 +33,10 @@ public class Main extends Application {
         Label languagePrompt = new Label();
         Button startButton = new Button();
 
+        languageChoice.setStyle("-fx-font-family: 'Noto Sans CJK JP';");
+        languagePrompt.setStyle("-fx-font-family: 'Noto Sans CJK JP';");
+        startButton.setStyle("-fx-font-family: 'Noto Sans CJK JP';");
+
         languageChoice.setOnAction(event -> {
             Locale selectedLocale = getSelectedLocale(
                     languageChoice.getValue()
@@ -179,6 +183,7 @@ public class Main extends Application {
 
         VBox root = new VBox(10);
         root.setPadding(new Insets(20));
+        root.setStyle("-fx-font-family: 'Noto Sans CJK JP';");
         root.getChildren().addAll(
                 title,
                 temperatureLabel,
