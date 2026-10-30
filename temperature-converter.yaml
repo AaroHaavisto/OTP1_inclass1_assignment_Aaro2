@@ -1,0 +1,55 @@
+
+# 1. Database Credentials Secret
+apiVersion: v1
+kind: Secret
+metadata:
+  name: temperature-converter-secret
+type: Opaque
+stringData:
+  mariadb-root-password: "rootsalasana123"
+  mariadb-database: "temperature_converter"
+
+---
+# 2. JavaFX App Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: temperature-converter
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: temperature-converter
+  template:
+    metadata:
+      labels:
+        app: temperature-converter
+    spec:
+      containers:
+        - name: temperature-converter
+          image: aarohaavisto/temperature_converter:latest
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: DB_HOST
+              value: "host.minikube.internal"
+            - name: DB_PORT
+              value: "3306"
+            - name: DB_NAME
+              value: "temperature_converter"
+            - name: DB_USER
+              value: "root"
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: temperature-converter-secret
+                  key: mariadb-root-password
+            - name: DISPLAY
+              value: "172.20.112.1:0.0"
+
+# Instructions:
+# 1. Start Minikube:
+#    minikube start --driver=docker
+# 2. Build image inside Minikube:
+#    minikube image build -t aarohaavisto/temperature_converter:latest .
+# 3. Apply Kubernetes manifest:
+#    kubectl apply -f temperature_converter.yaml

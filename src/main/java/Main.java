@@ -25,9 +25,7 @@ public class Main extends Application {
 
 
         ComboBox<String> languageChoice = new ComboBox<>();
-        languageChoice.getItems().addAll(
-                "English", "Suomi", "Svenska", "日本語"
-        );
+        languageChoice.getItems().addAll("English", "Suomi", "Svenska", "日本語", "العربية");
         languageChoice.setValue("English");
 
         Label languagePrompt = new Label();
@@ -66,7 +64,6 @@ public class Main extends Application {
         languageRoot.getChildren().addAll(
                 languagePrompt, languageChoice, startButton
         );
-
         stage.setTitle("Select Language");
         stage.setScene(new Scene(languageRoot, 300, 150));
         stage.show();
@@ -89,6 +86,8 @@ public class Main extends Application {
             return new Locale("sv", "SE");
         } else if (language.equals("日本語")) {
             return new Locale("ja", "JP");
+        } else if (language.equals("العربية")) {
+            return new Locale("ar", "SA");
         } else {
             return new Locale("en", "US");
         }
@@ -100,6 +99,12 @@ public class Main extends Application {
         TemperatureConverter converter = new TemperatureConverter();
         TemperatureUnitDAO unitDAO = new TemperatureUnitDAO();
         TempRecordDAO recordDAO = new TempRecordDAO();
+
+        SpeedDistanceTimeUnitDAO speedUnitDAO =
+                new SpeedDistanceTimeUnitDAO();
+
+        SpeedDistanceTimeDAO speedRecordDAO =
+                new SpeedDistanceTimeDAO();
 
         Label title = new Label(messages.getString("app.title"));
         Label temperatureLabel = new Label(
@@ -127,6 +132,13 @@ public class Main extends Application {
         Button convertButton = new Button(
                 messages.getString("button.convert")
         );
+
+        Button speedDistanceTimeButton =
+                new Button(messages.getString("sdt.title"));
+
+        speedDistanceTimeButton.setOnAction(event -> {
+            showSpeedDistanceTime(stage);
+        });
 
         Label resultLabel = new Label(
                 messages.getString("result.label")
@@ -191,7 +203,8 @@ public class Main extends Application {
                 fromUnit,
                 toUnit,
                 convertButton,
-                resultLabel
+                resultLabel,
+                speedDistanceTimeButton
         );
 
         stage.setTitle(messages.getString("app.title"));
@@ -218,6 +231,110 @@ public class Main extends Application {
             return "K";
         }
     }
+
+    private String translateUnit(String unitName) {
+        switch (unitName) {
+            case "Meter":
+                return messages.getString("unit.meter");
+            case "Kilometer":
+                return messages.getString("unit.kilometer");
+            case "Mile":
+                return messages.getString("unit.mile");
+            case "Second":
+                return messages.getString("unit.second");
+            case "Minute":
+                return messages.getString("unit.minute");
+            case "Hour":
+                return messages.getString("unit.hour");
+            case "Meters per second":
+                return messages.getString("unit.mps");
+            case "Kilometers per hour":
+                return messages.getString("unit.kmh");
+            case "Miles per hour":
+                return messages.getString("unit.mph");
+            default:
+                return unitName;
+        }
+    }
+
+    private void showSpeedDistanceTime(Stage stage) {
+
+        SpeedDistanceTimeUnitDAO unitDAO =
+                new SpeedDistanceTimeUnitDAO();
+
+        SpeedDistanceTimeDAO recordDAO =
+                new SpeedDistanceTimeDAO();
+
+        Label distanceLabel = new Label(messages.getString("sdt.distance"));        TextField distanceInput = new TextField();
+
+        ComboBox<String> distanceUnit = new ComboBox<>();
+        for (String unit : unitDAO.getUnits("distance")) {
+            distanceUnit.getItems().add(translateUnit(unit));
+        }
+
+        Label timeLabel = new Label(messages.getString("sdt.time"));        TextField timeInput = new TextField();
+
+        ComboBox<String> timeUnit = new ComboBox<>();
+        for (String unit : unitDAO.getUnits("time")) {
+            timeUnit.getItems().add(translateUnit(unit));
+        }
+
+        Label speedLabel = new Label(messages.getString("sdt.speed"));        TextField speedInput = new TextField();
+
+        ComboBox<String> speedUnit = new ComboBox<>();
+        for (String unit : unitDAO.getUnits("speed")) {
+            speedUnit.getItems().add(translateUnit(unit));
+        }
+        distanceUnit.getSelectionModel().selectFirst();
+        timeUnit.getSelectionModel().selectFirst();
+        speedUnit.getSelectionModel().selectFirst();
+
+        Button saveButton = new Button(messages.getString("sdt.save"));        Label resultLabel = new Label();
+        saveButton.setOnAction(event -> {
+            try {
+                double distance = Double.parseDouble(distanceInput.getText());
+                double time = Double.parseDouble(timeInput.getText());
+                double speed = Double.parseDouble(speedInput.getText());
+
+                int distanceId = unitDAO.getUnitId(
+                        distanceUnit.getValue(), "distance");
+
+                int timeId = unitDAO.getUnitId(
+                        timeUnit.getValue(), "time");
+
+                int speedId = unitDAO.getUnitId(
+                        speedUnit.getValue(), "speed");
+
+                recordDAO.saveRecord(
+                        distance, distanceId,
+                        time, timeId,
+                        speed, speedId
+                );
+
+                resultLabel.setText("Record saved successfully.");
+
+            } catch (NumberFormatException exception) {
+                resultLabel.setText("Enter valid numbers in all fields.");
+            } catch (SQLException exception) {
+                resultLabel.setText("Database error: " + exception.getMessage());
+            }
+        });
+
+        VBox root = new VBox(10);
+        root.setPadding(new Insets(20));
+
+        root.getChildren().addAll(
+                distanceLabel, distanceInput, distanceUnit,
+                timeLabel, timeInput, timeUnit,
+                speedLabel, speedInput, speedUnit,
+                saveButton, resultLabel
+        );
+
+        stage.setTitle(messages.getString("sdt.title"));
+        stage.setScene(new Scene(root, 400, 500));
+        stage.show();
+    }
+
 
     public static void main(String[] args) {
         launch(args);

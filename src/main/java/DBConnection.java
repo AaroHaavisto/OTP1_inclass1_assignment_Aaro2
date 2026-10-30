@@ -14,11 +14,9 @@ public class DBConnection {
                 .getClassLoader()
                 .getResourceAsStream("database.properties")) {
 
-            if (input == null) {
-                throw new RuntimeException("database.properties not found");
+            if (input != null) {
+                properties.load(input);
             }
-
-            properties.load(input);
 
         } catch (IOException e) {
             throw new RuntimeException("Could not load database properties", e);
@@ -27,10 +25,22 @@ public class DBConnection {
 
     public static Connection getConnection() throws SQLException {
 
-        return DriverManager.getConnection(
-                properties.getProperty("db.url"),
-                properties.getProperty("db.user"),
-                properties.getProperty("db.password")
-        );
+        String host = System.getenv("DB_HOST");
+        String port = System.getenv("DB_PORT");
+        String database = System.getenv("DB_NAME");
+        String user = System.getenv("DB_USER");
+        String password = System.getenv("DB_PASSWORD");
+
+        String url;
+
+        if (host != null) {
+            url = "jdbc:mariadb://" + host + ":" + port + "/" + database;
+        } else {
+            url = properties.getProperty("db.url");
+            user = properties.getProperty("db.user");
+            password = properties.getProperty("db.password");
+        }
+
+        return DriverManager.getConnection(url, user, password);
     }
 }
