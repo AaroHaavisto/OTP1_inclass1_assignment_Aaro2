@@ -31,7 +31,7 @@ spec:
           imagePullPolicy: IfNotPresent
           env:
             - name: DB_HOST
-              value: "host.minikube.internal"
+              value: "host.docker.internal"
             - name: DB_PORT
               value: "3306"
             - name: DB_NAME
