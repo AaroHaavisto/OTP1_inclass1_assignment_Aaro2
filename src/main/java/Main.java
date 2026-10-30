@@ -257,6 +257,18 @@ public class Main extends Application {
         }
     }
 
+    private String getOriginalUnit(String translatedName, String unitType) {
+        SpeedDistanceTimeUnitDAO unitDAO = new SpeedDistanceTimeUnitDAO();
+
+        for (String unit : unitDAO.getUnits(unitType)) {
+            if (translateUnit(unit).equals(translatedName)) {
+                return unit;
+            }
+        }
+
+        return null;
+    }
+
     private void showSpeedDistanceTime(Stage stage) {
 
         SpeedDistanceTimeUnitDAO unitDAO =
@@ -297,14 +309,13 @@ public class Main extends Application {
                 double speed = Double.parseDouble(speedInput.getText());
 
                 int distanceId = unitDAO.getUnitId(
-                        distanceUnit.getValue(), "distance");
+                        getOriginalUnit(distanceUnit.getValue(), "distance"), "distance");
 
                 int timeId = unitDAO.getUnitId(
-                        timeUnit.getValue(), "time");
+                        getOriginalUnit(timeUnit.getValue(), "time"), "time");
 
                 int speedId = unitDAO.getUnitId(
-                        speedUnit.getValue(), "speed");
-
+                        getOriginalUnit(speedUnit.getValue(), "speed"), "speed");
                 recordDAO.saveRecord(
                         distance, distanceId,
                         time, timeId,
