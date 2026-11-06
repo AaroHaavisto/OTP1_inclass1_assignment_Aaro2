@@ -11,6 +11,7 @@ import javafx.scene.control.TextField;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 import javafx.scene.control.ListView;
+import javafx.geometry.NodeOrientation;
 
 import java.sql.SQLException;
 import java.util.Locale;
@@ -210,6 +211,8 @@ public class Main extends Application {
         VBox root = new VBox(10);
         root.setPadding(new Insets(20));
         root.setStyle("-fx-font-family: 'Noto Sans CJK JP';");
+
+        root.setNodeOrientation(getNodeOrientation(locale));
         root.getChildren().addAll(
                 title,
                 temperatureLabel,
@@ -236,6 +239,13 @@ public class Main extends Application {
         } else {
             return "Kelvin";
         }
+    }
+
+    static NodeOrientation getNodeOrientation(Locale locale) {
+        if ("ar".equals(locale.getLanguage())) {
+            return NodeOrientation.RIGHT_TO_LEFT;
+        }
+        return NodeOrientation.LEFT_TO_RIGHT;
     }
 
     private String getSymbol(String unit) {
@@ -355,6 +365,8 @@ public class Main extends Application {
         VBox root = new VBox(10);
         root.setPadding(new Insets(20));
         root.setStyle("-fx-font-family: 'Noto Sans CJK JP';");
+
+        root.setNodeOrientation(getNodeOrientation(locale));
 
         root.getChildren().addAll(
                 distanceLabel, distanceInput, distanceUnit,
