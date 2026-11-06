@@ -39,16 +39,63 @@ in `Main.java` and is currently in English.
 
 ### Architecture
 
-The application uses a small layered architecture:
+The application uses a small layered architecture. The source code is divided
+into packages so that the JavaFX user interface, domain models, database access,
+and database connection handling are kept separate:
 
-* **Presentation layer:** `Main` extends JavaFX `Application` and handles the
-  window, input controls, unit selection, conversion action, and result display.
-* **Domain layer:** `TemperatureConverter` contains the conversion formulas and
-  the extreme-temperature rule (below -40 °C or above 50 °C).
-* **Data-access layer:** `TemperatureUnitDAO` reads unit identifiers and names,
-  while `TempRecordDAO` persists conversion records.
-* **Infrastructure layer:** `DBConnection` loads `database.properties` from the
+* **Application entry point:** `Main` extends JavaFX `Application` and starts
+  the `TemperatureController`.
+* **Controller layer:** `TemperatureController` builds the JavaFX views, handles
+  user actions, selects the locale and controls the temperature and
+  speed/distance/time views.
+* **Model layer:** `TemperatureConverter` contains the temperature formulas,
+  while `Unit` and `TempRecord` represent application data.
+* **Data-access layer:** the classes in `Dao` read unit information and save
+  temperature and speed/distance/time records.
+* **Database layer:** `DBConnection` loads `database.properties` from the
   classpath and creates JDBC connections.
+
+### Project structure
+
+```text
+src
+├── main
+│   ├── java
+│   │   ├── Main.java
+│   │   └── com.example.temperatureconverter
+│   │       ├── Controller
+│   │       │   └── TemperatureController.java
+│   │       ├── Dao
+│   │       │   ├── SpeedDistanceTimeDAO.java
+│   │       │   ├── SpeedDistanceTimeUnitDAO.java
+│   │       │   ├── TempRecordDAO.java
+│   │       │   └── TemperatureUnitDAO.java
+│   │       ├── Database
+│   │       │   └── DBConnection.java
+│   │       └── Model
+│   │           ├── TempRecord.java
+│   │           ├── TemperatureConverter.java
+│   │           └── Unit.java
+│   └── resources
+│       ├── language-view.fxml
+│       ├── main-view.fxml
+│       ├── MessagesBundle_*.properties
+│       └── database.properties
+└── test
+    └── java
+        ├── DatabaseDaoTest.java
+        ├── MainTest.java
+        └── TemperatureConverterTest.java
+```
+
+`Main.java` contains only the JavaFX application bootstrap. The controller is
+responsible for the user interface, the model package contains domain objects
+and conversion logic, and the DAO package isolates SQL operations from the
+rest of the application. Tests are located under `src/test/java` and validate
+the conversion logic, database access, and locale-dependent UI orientation.
+The FXML resources define the reusable layouts for the language-selection view
+and the main temperature-converter view. Their controls use `fx:id` values that
+match the corresponding controls in `TemperatureController`.
 
 This separation keeps conversion logic independent from JavaFX and allows the
 DAO classes to be tested with a separate H2 database. SQL statements use
@@ -59,9 +106,12 @@ prepared statements for values supplied to queries and inserts.
 The logical component/class relationships are:
 
 ```text
-Main --> TemperatureConverter
-Main --> TemperatureUnitDAO --> DBConnection
-Main --> TempRecordDAO      --> DBConnection
+Main --> TemperatureController
+TemperatureController --> TemperatureConverter
+TemperatureController --> TemperatureUnitDAO --> DBConnection
+TemperatureController --> TempRecordDAO      --> DBConnection
+TemperatureController --> SpeedDistanceTimeDAO
+TemperatureController --> SpeedDistanceTimeUnitDAO --> DBConnection
 ```
 
 The relational model contains two tables:
@@ -232,3 +282,64 @@ The Jenkins agent must provide JDK 21 under the configured name `jdk-21.0.12`,
 Maven under `Maven3`, Docker, and the Docker Hub credential identified by
 `docker_ID`. The pipeline publishes the image
 `aarohaavisto/temperature_converter:latest`.
+
+## Localization Approach
+
+The Temperature Converter application supports five languages: English, Finnish,
+Swedish, Japanese, and Arabic.
+
+Two localization approaches are used in the application.
+
+### 1. ResourceBundle and Properties Files
+
+Java's `ResourceBundle` is used to translate the user interface.
+
+Separate properties files are provided for each supported language:
+
+- `MessagesBundle_en_US.properties` – English
+- `MessagesBundle_fi_FI.properties` – Finnish
+- `MessagesBundle_sv_SE.properties` – Swedish
+- `MessagesBundle_ja_JP.properties` – Japanese
+- `MessagesBundle_ar_SA.properties` – Arabic
+
+The application loads the appropriate resource bundle based on the language
+selected by the user. This allows interface texts, labels, buttons, and
+messages to change when the user selects another language.
+
+### 2. Database Translation Tables
+
+Database localization is implemented using separate translation tables.
+
+The application uses the following tables:
+
+- `temperature_unit_translation`
+- `speed_distance_time_unit_translation`
+
+These tables store translated unit names and descriptions for each supported
+language.
+
+The DAO classes retrieve the translations based on the selected language. If a
+translation is unavailable, the application uses English as a fallback
+language.
+
+### 3. Right-to-Left Language Support
+
+Arabic is supported using JavaFX's `NodeOrientation.RIGHT_TO_LEFT`.
+
+When Arabic is selected, the user interface direction changes to right-to-left.
+For other supported languages, the default left-to-right direction is used.
+
+### Why This Approach Was Chosen
+
+This approach was chosen because it separates user interface translations from
+database translations.
+
+`ResourceBundle` provides a simple and maintainable way to manage static user
+interface texts. Separate database translation tables make it possible to
+retrieve localized unit names and descriptions directly from the database.
+
+The English fallback also ensures that the application can still display unit
+information if a translation is missing.
+
+Using these two approaches makes the application easier to maintain and extend
+with additional languages in the future.

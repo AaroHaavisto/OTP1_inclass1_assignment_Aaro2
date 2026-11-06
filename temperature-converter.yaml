@@ -44,7 +44,7 @@ spec:
                   name: temperature-converter-secret
                   key: mariadb-root-password
             - name: DISPLAY
-              value: "172.20.112.1:0.0"
+              value: "192.168.1.156"
 
 # Instructions:
 # 1. Start Minikube:

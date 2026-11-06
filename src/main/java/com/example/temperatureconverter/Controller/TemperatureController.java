@@ -2,6 +2,9 @@
 package com.example.temperatureconverter.Controller;
 
 import javafx.geometry.Insets;
+import javafx.fxml.FXML;
+import javafx.fxml.FXMLLoader;
+import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.Alert;
 import javafx.scene.text.Font;
@@ -15,6 +18,7 @@ import javafx.scene.control.ListView;
 import javafx.geometry.NodeOrientation;
 
 import java.sql.SQLException;
+import java.io.IOException;
 import java.util.Locale;
 import java.util.ResourceBundle;
 
@@ -31,15 +35,33 @@ public class TemperatureController {
     private ResourceBundle messages;
     private Locale locale;
 
+    @FXML private ComboBox<String> languageChoice;
+    @FXML private Label languagePrompt;
+    @FXML private Button startButton;
+    @FXML private Label title;
+    @FXML private Label temperatureLabel;
+    @FXML private TextField temperatureInput;
+    @FXML private ComboBox<Unit> fromUnit;
+    @FXML private ComboBox<Unit> toUnit;
+    @FXML private Button convertButton;
+    @FXML private Label resultLabel;
+    @FXML private Label historyLabel;
+    @FXML private ListView<String> historyList;
+    @FXML private Button speedDistanceTimeButton;
+
     public void start(Stage stage) {
-
-
-        ComboBox<String> languageChoice = new ComboBox<>();
-        languageChoice.getItems().addAll("English", "Suomi", "Svenska", "日本語", "العربية");
-        languageChoice.setValue("English");
-
-        Label languagePrompt = new Label();
-        Button startButton = new Button();
+        try {
+            FXMLLoader loader = new FXMLLoader(
+                    getClass().getResource("/language-view.fxml")
+            );
+            loader.setController(this);
+            Parent languageRoot = loader.load();
+            stage.setScene(new Scene(languageRoot, 300, 150));
+        } catch (IOException exception) {
+            throw new IllegalStateException(
+                    "Could not load language view", exception
+            );
+        }
 
         languageChoice.setStyle("-fx-font-family: 'Noto Sans CJK JP';");
         languagePrompt.setStyle("-fx-font-family: 'Noto Sans CJK JP';");
@@ -69,13 +91,7 @@ public class TemperatureController {
         languageChoice.getSelectionModel().select("English");
 
 
-        VBox languageRoot = new VBox(10);
-        languageRoot.setPadding(new Insets(20));
-        languageRoot.getChildren().addAll(
-                languagePrompt, languageChoice, startButton
-        );
         stage.setTitle("Select Language");
-        stage.setScene(new Scene(languageRoot, 300, 150));
         stage.show();
 
         startButton.setOnAction(event -> {
@@ -86,6 +102,16 @@ public class TemperatureController {
             messages = ResourceBundle.getBundle("MessagesBundle", locale);
             showConverter(stage);
         });
+    }
+
+    @FXML
+    private void initialize() {
+        if (languageChoice != null && title == null) {
+            languageChoice.getItems().addAll(
+                    "English", "Suomi", "Svenska", "日本語", "العربية"
+            );
+            languageChoice.setValue("English");
+        }
     }
 
 
@@ -109,48 +135,33 @@ public class TemperatureController {
         TemperatureConverter converter = new TemperatureConverter();
         TemperatureUnitDAO unitDAO = new TemperatureUnitDAO();
         TempRecordDAO recordDAO = new TempRecordDAO();
+        
+        Parent root;
+        try {
+            FXMLLoader loader = new FXMLLoader(
+                    getClass().getResource("/main-view.fxml")
+            );
+            loader.setController(this);
+            root = loader.load();
+        } catch (IOException exception) {
+            throw new IllegalStateException(
+                    "Could not load main view", exception
+            );
+        }
 
-        SpeedDistanceTimeUnitDAO speedUnitDAO =
-                new SpeedDistanceTimeUnitDAO();
-
-        SpeedDistanceTimeDAO speedRecordDAO =
-                new SpeedDistanceTimeDAO();
-
-        Label title = new Label(messages.getString("app.title"));
-        Label temperatureLabel = new Label(
-                messages.getString("temperature.label")
-        );
-
-        TextField temperatureInput = new TextField();
-
-        ComboBox<Unit> fromUnit = new ComboBox<>();
+        title.setText(messages.getString("app.title"));
+        temperatureLabel.setText(messages.getString("temperature.label"));
         fromUnit.getItems().addAll(unitDAO.getUnits(locale.getLanguage()));
         fromUnit.setValue(fromUnit.getItems().get(0));
-
-        ComboBox<Unit> toUnit = new ComboBox<>();
         toUnit.getItems().addAll(unitDAO.getUnits(locale.getLanguage()));
         toUnit.setValue(toUnit.getItems().get(1));
-
-        Button convertButton = new Button(
-                messages.getString("button.convert")
-        );
-
-        Button speedDistanceTimeButton =
-                new Button(messages.getString("sdt.title"));
+        convertButton.setText(messages.getString("button.convert"));
 
         speedDistanceTimeButton.setOnAction(event -> {
             showSpeedDistanceTime(stage);
         });
-
-        Label resultLabel = new Label(
-                messages.getString("result.label")
-        );
-
-        Label historyLabel = new Label(
-                messages.getString("history.title")
-        );
-
-        ListView<String> historyList = new ListView<>();
+        resultLabel.setText(messages.getString("result.label"));
+        historyLabel.setText(messages.getString("history.title"));
 
         convertButton.setOnAction(event -> {
             try {
@@ -216,23 +227,7 @@ public class TemperatureController {
             );
         }
 
-        VBox root = new VBox(10);
-        root.setPadding(new Insets(20));
-        root.setStyle("-fx-font-family: 'Noto Sans CJK JP';");
-
         root.setNodeOrientation(getNodeOrientation(locale));
-        root.getChildren().addAll(
-                title,
-                temperatureLabel,
-                temperatureInput,
-                fromUnit,
-                toUnit,
-                convertButton,
-                resultLabel,
-                historyLabel,
-                historyList,
-                speedDistanceTimeButton
-        );
 
         stage.setTitle(messages.getString("app.title"));
         stage.setScene(new Scene(root, 500, 500));
