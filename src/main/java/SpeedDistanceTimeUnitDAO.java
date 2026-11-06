@@ -1,4 +1,3 @@
-
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -12,17 +11,26 @@ public class SpeedDistanceTimeUnitDAO {
         return DBConnection.getConnection();
     }
 
-    public int getUnitId(String unitName, String unitType) throws SQLException {
+    public int getUnitId(String unitName, String unitType, String language)
+            throws SQLException {
+
         String sql = """
-                SELECT id FROM speed_distance_time_units
-                WHERE unit_name = ? AND unit_type = ?
+                SELECT u.id
+                FROM speed_distance_time_units u
+                LEFT JOIN speed_distance_time_unit_translation t
+                    ON u.id = t.unit_id AND t.lang = ?
+                LEFT JOIN speed_distance_time_unit_translation en
+                    ON u.id = en.unit_id AND en.lang = 'en'
+                WHERE COALESCE(t.name, en.name) = ?
+                AND u.unit_type = ?
                 """;
 
         try (Connection connection = getConnection();
              PreparedStatement statement = connection.prepareStatement(sql)) {
 
-            statement.setString(1, unitName);
-            statement.setString(2, unitType);
+            statement.setString(1, language);
+            statement.setString(2, unitName);
+            statement.setString(3, unitType);
 
             try (ResultSet resultSet = statement.executeQuery()) {
                 if (resultSet.next()) {
@@ -34,22 +42,37 @@ public class SpeedDistanceTimeUnitDAO {
         throw new SQLException("Unit was not found: " + unitName);
     }
 
-    public List<String> getUnits(String unitType) {
-        List<String> units = new ArrayList<>();
+    public List<Unit> getUnits(String unitType, String language) {
+
+        List<Unit> units = new ArrayList<>();
 
         String sql = """
-                SELECT unit_name FROM speed_distance_time_units
-                WHERE unit_type = ?
+                SELECT
+                    u.id,
+                    COALESCE(t.name, en.name) AS name,
+                    COALESCE(t.description, en.description) AS description
+                FROM speed_distance_time_units u
+                LEFT JOIN speed_distance_time_unit_translation t
+                    ON u.id = t.unit_id AND t.lang = ?
+                LEFT JOIN speed_distance_time_unit_translation en
+                    ON u.id = en.unit_id AND en.lang = 'en'
+                WHERE u.unit_type = ?
+                ORDER BY u.id
                 """;
 
         try (Connection connection = getConnection();
              PreparedStatement statement = connection.prepareStatement(sql)) {
 
-            statement.setString(1, unitType);
+            statement.setString(1, language);
+            statement.setString(2, unitType);
 
             try (ResultSet resultSet = statement.executeQuery()) {
                 while (resultSet.next()) {
-                    units.add(resultSet.getString("unit_name"));
+                    units.add(new Unit(
+                            resultSet.getInt("id"),
+                            resultSet.getString("name"),
+                            resultSet.getString("description")
+                    ));
                 }
             }
 

@@ -10,6 +10,7 @@ import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
+import javafx.scene.control.ListView;
 
 import java.sql.SQLException;
 import java.util.Locale;
@@ -113,21 +114,13 @@ public class Main extends Application {
 
         TextField temperatureInput = new TextField();
 
-        ComboBox<String> fromUnit = new ComboBox<>();
-        fromUnit.getItems().addAll(
-                messages.getString("unit.celsius"),
-                messages.getString("unit.fahrenheit"),
-                messages.getString("unit.kelvin")
-        );
-        fromUnit.setValue(messages.getString("unit.celsius"));
+        ComboBox<Unit> fromUnit = new ComboBox<>();
+        fromUnit.getItems().addAll(unitDAO.getUnits(locale.getLanguage()));
+        fromUnit.setValue(fromUnit.getItems().get(0));
 
-        ComboBox<String> toUnit = new ComboBox<>();
-        toUnit.getItems().addAll(
-                messages.getString("unit.celsius"),
-                messages.getString("unit.fahrenheit"),
-                messages.getString("unit.kelvin")
-        );
-        toUnit.setValue(messages.getString("unit.fahrenheit"));
+        ComboBox<Unit> toUnit = new ComboBox<>();
+        toUnit.getItems().addAll(unitDAO.getUnits(locale.getLanguage()));
+        toUnit.setValue(toUnit.getItems().get(1));
 
         Button convertButton = new Button(
                 messages.getString("button.convert")
@@ -144,14 +137,20 @@ public class Main extends Application {
                 messages.getString("result.label")
         );
 
+        Label historyLabel = new Label(
+                messages.getString("history.title")
+        );
+
+        ListView<String> historyList = new ListView<>();
+
         convertButton.setOnAction(event -> {
             try {
                 double temperature = Double.parseDouble(
                         temperatureInput.getText()
                 );
 
-                String from = getEnglishUnit(fromUnit.getValue());
-                String to = getEnglishUnit(toUnit.getValue());
+                String from = unitDAO.getUnitName(fromUnit.getValue().getId());
+                String to = unitDAO.getUnitName(toUnit.getValue().getId());
 
                 double result = temperature;
 
@@ -171,12 +170,18 @@ public class Main extends Application {
                     result = converter.celsiusToFahrenheit(celsius);
                 }
 
-                int fromUnitId = unitDAO.getUnitId(from);
-                int toUnitId = unitDAO.getUnitId(to);
+                int fromUnitId = fromUnit.getValue().getId();
+                int toUnitId = toUnit.getValue().getId();
 
                 recordDAO.saveRecord(
-                        temperature, fromUnitId, result, toUnitId
+                        temperature,
+                        fromUnitId,
+                        result,
+                        toUnitId,
+                        locale.getLanguage()
                 );
+
+                updateHistory(historyList, recordDAO);
 
                 resultLabel.setText(
                         messages.getString("result.label") + " "
@@ -193,6 +198,15 @@ public class Main extends Application {
             }
         });
 
+        try {
+            updateHistory(historyList, recordDAO);
+        } catch (SQLException exception) {
+            resultLabel.setText(
+                    messages.getString("error.database") + " "
+                            + exception.getMessage()
+            );
+        }
+
         VBox root = new VBox(10);
         root.setPadding(new Insets(20));
         root.setStyle("-fx-font-family: 'Noto Sans CJK JP';");
@@ -204,11 +218,13 @@ public class Main extends Application {
                 toUnit,
                 convertButton,
                 resultLabel,
+                historyLabel,
+                historyList,
                 speedDistanceTimeButton
         );
 
         stage.setTitle(messages.getString("app.title"));
-        stage.setScene(new Scene(root, 400, 350));
+        stage.setScene(new Scene(root, 500, 500));
         stage.show();
     }
 
@@ -229,6 +245,16 @@ public class Main extends Application {
             return "°F";
         } else {
             return "K";
+        }
+    }
+
+    private void updateHistory(ListView<String> historyList,
+                               TempRecordDAO recordDAO) throws SQLException {
+
+        historyList.getItems().clear();
+
+        for (TempRecord record : recordDAO.getLastFiveRecords()) {
+            historyList.getItems().add(record.toString());
         }
     }
 
@@ -257,17 +283,6 @@ public class Main extends Application {
         }
     }
 
-    private String getOriginalUnit(String translatedName, String unitType) {
-        SpeedDistanceTimeUnitDAO unitDAO = new SpeedDistanceTimeUnitDAO();
-
-        for (String unit : unitDAO.getUnits(unitType)) {
-            if (translateUnit(unit).equals(translatedName)) {
-                return unit;
-            }
-        }
-
-        return null;
-    }
 
     private void showSpeedDistanceTime(Stage stage) {
 
@@ -277,62 +292,69 @@ public class Main extends Application {
         SpeedDistanceTimeDAO recordDAO =
                 new SpeedDistanceTimeDAO();
 
-        Label distanceLabel = new Label(messages.getString("sdt.distance"));        TextField distanceInput = new TextField();
+        Label distanceLabel = new Label(messages.getString("sdt.distance"));
+        TextField distanceInput = new TextField();
 
-        ComboBox<String> distanceUnit = new ComboBox<>();
-        for (String unit : unitDAO.getUnits("distance")) {
-            distanceUnit.getItems().add(translateUnit(unit));
-        }
+        ComboBox<Unit> distanceUnit = new ComboBox<>();
+        distanceUnit.getItems().addAll(
+                unitDAO.getUnits("distance", locale.getLanguage())
+        );
 
-        Label timeLabel = new Label(messages.getString("sdt.time"));        TextField timeInput = new TextField();
+        Label timeLabel = new Label(messages.getString("sdt.time"));
+        TextField timeInput = new TextField();
 
-        ComboBox<String> timeUnit = new ComboBox<>();
-        for (String unit : unitDAO.getUnits("time")) {
-            timeUnit.getItems().add(translateUnit(unit));
-        }
+        ComboBox<Unit> timeUnit = new ComboBox<>();
+        timeUnit.getItems().addAll(
+                unitDAO.getUnits("time", locale.getLanguage())
+        );
 
-        Label speedLabel = new Label(messages.getString("sdt.speed"));        TextField speedInput = new TextField();
+        Label speedLabel = new Label(messages.getString("sdt.speed"));
+        TextField speedInput = new TextField();
 
-        ComboBox<String> speedUnit = new ComboBox<>();
-        for (String unit : unitDAO.getUnits("speed")) {
-            speedUnit.getItems().add(translateUnit(unit));
-        }
+        ComboBox<Unit> speedUnit = new ComboBox<>();
+        speedUnit.getItems().addAll(
+                unitDAO.getUnits("speed", locale.getLanguage())
+        );
+
         distanceUnit.getSelectionModel().selectFirst();
         timeUnit.getSelectionModel().selectFirst();
         speedUnit.getSelectionModel().selectFirst();
 
-        Button saveButton = new Button(messages.getString("sdt.save"));        Label resultLabel = new Label();
+        Button saveButton = new Button(messages.getString("sdt.save"));
+        Label resultLabel = new Label();
+
         saveButton.setOnAction(event -> {
             try {
                 double distance = Double.parseDouble(distanceInput.getText());
                 double time = Double.parseDouble(timeInput.getText());
                 double speed = Double.parseDouble(speedInput.getText());
 
-                int distanceId = unitDAO.getUnitId(
-                        getOriginalUnit(distanceUnit.getValue(), "distance"), "distance");
+                int distanceId = distanceUnit.getValue().getId();
+                int timeId = timeUnit.getValue().getId();
+                int speedId = speedUnit.getValue().getId();
 
-                int timeId = unitDAO.getUnitId(
-                        getOriginalUnit(timeUnit.getValue(), "time"), "time");
-
-                int speedId = unitDAO.getUnitId(
-                        getOriginalUnit(speedUnit.getValue(), "speed"), "speed");
                 recordDAO.saveRecord(
                         distance, distanceId,
                         time, timeId,
                         speed, speedId
                 );
 
-                resultLabel.setText("Record saved successfully.");
+                resultLabel.setText(messages.getString("sdt.success"));
 
             } catch (NumberFormatException exception) {
-                resultLabel.setText("Enter valid numbers in all fields.");
+                resultLabel.setText(messages.getString("sdt.error"));
+
             } catch (SQLException exception) {
-                resultLabel.setText("Database error: " + exception.getMessage());
+                resultLabel.setText(
+                        messages.getString("error.database") + " "
+                                + exception.getMessage()
+                );
             }
         });
 
         VBox root = new VBox(10);
         root.setPadding(new Insets(20));
+        root.setStyle("-fx-font-family: 'Noto Sans CJK JP';");
 
         root.getChildren().addAll(
                 distanceLabel, distanceInput, distanceUnit,
