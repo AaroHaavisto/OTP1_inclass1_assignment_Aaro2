@@ -12,6 +12,10 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import com.example.temperatureconverter.Dao.TempRecordDAO;
+import com.example.temperatureconverter.Dao.TemperatureUnitDAO;
+import com.example.temperatureconverter.Model.Unit;
+
 class DatabaseDaoTest {
 
     private static final String DATABASE_URL =

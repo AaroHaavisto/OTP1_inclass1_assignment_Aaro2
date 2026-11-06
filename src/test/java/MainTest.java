@@ -5,13 +5,15 @@ import java.util.Locale;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+import com.example.temperatureconverter.Controller.TemperatureController;
+
 class MainTest {
 
     @Test
     void arabicLocaleUsesRightToLeftOrientation() {
         assertEquals(
                 NodeOrientation.RIGHT_TO_LEFT,
-                Main.getNodeOrientation(new Locale("ar", "SA"))
+                TemperatureController.getNodeOrientation(new Locale("ar", "SA"))
         );
     }
 
@@ -19,11 +21,11 @@ class MainTest {
     void nonArabicLocalesUseLeftToRightOrientation() {
         assertEquals(
                 NodeOrientation.LEFT_TO_RIGHT,
-                Main.getNodeOrientation(Locale.ENGLISH)
+                TemperatureController.getNodeOrientation(Locale.ENGLISH)
         );
         assertEquals(
                 NodeOrientation.LEFT_TO_RIGHT,
-                Main.getNodeOrientation(new Locale("fi", "FI"))
+                TemperatureController.getNodeOrientation(new Locale("fi", "FI"))
         );
     }
 }
