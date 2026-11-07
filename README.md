@@ -256,14 +256,17 @@ The Dockerfile expects compiled classes and copied Maven dependencies:
 mvn clean package
 mvn dependency:copy-dependencies -DoutputDirectory=target/dependency
 docker build -t temperature-converter .
-docker run --rm temperature-converter
+docker run --rm -e DISPLAY=host.docker.internal:0.0 temperature-converter
 ```
 
 The container starts the JavaFX application with software rendering. A
 graphical display must be made available to the container for the window to be
-visible; the exact display forwarding configuration depends on the host
-operating system. The database configuration and MariaDB network access must
-also be available to the container.
+visible; on Windows, start an X server such as VcXsrv or Xming and allow
+connections from Docker before running the command. The database
+configuration and MariaDB network access must also be available to the
+container. If the X server is not running or blocks Docker connections,
+JavaFX can report `Error initializing QuantumRenderer: no suitable pipeline
+found` even though the JavaFX libraries are installed correctly.
 
 ### Jenkins pipeline
 

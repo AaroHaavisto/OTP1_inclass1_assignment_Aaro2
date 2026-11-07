@@ -101,6 +101,8 @@ public class TemperatureController {
 
             messages = ResourceBundle.getBundle("MessagesBundle", locale);
             showConverter(stage);
+            System.out.println("Selected locale: " + locale);
+            System.out.println("SDT title: " + messages.getString("sdt.title"));
         });
     }
 
@@ -151,6 +153,7 @@ public class TemperatureController {
 
         title.setText(messages.getString("app.title"));
         temperatureLabel.setText(messages.getString("temperature.label"));
+        speedDistanceTimeButton.setText(messages.getString("sdt.title"));
         fromUnit.getItems().addAll(unitDAO.getUnits(locale.getLanguage()));
         fromUnit.setValue(fromUnit.getItems().get(0));
         toUnit.getItems().addAll(unitDAO.getUnits(locale.getLanguage()));

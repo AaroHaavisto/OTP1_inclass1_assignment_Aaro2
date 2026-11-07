@@ -64,6 +64,11 @@
         <version>0.0.8</version>
         <configuration>
           <mainClass>Main</mainClass>
+          <options>
+            <option>
+              --add-exports=javafx.graphics/com.sun.javafx.util=ALL-UNNAMED
+            </option>
+          </options>
         </configuration>
       </plugin>
 
