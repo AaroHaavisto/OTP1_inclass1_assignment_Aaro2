@@ -8,6 +8,10 @@ import com.example.temperatureconverter.Database.DBConnection;
 
 public class SpeedDistanceTimeDAO {
 
+    protected Connection getConnection() throws SQLException {
+        return DBConnection.getConnection();
+    }
+
     public void saveRecord(
             double distanceValue, int distanceUnitId,
             double timeValue, int timeUnitId,
@@ -19,7 +23,7 @@ public class SpeedDistanceTimeDAO {
                 + "speed_value, speed_unit_id) "
                 + "VALUES (?, ?, ?, ?, ?, ?)";
 
-        try (Connection connection = DBConnection.getConnection();
+        try (Connection connection = getConnection();
              PreparedStatement statement = connection.prepareStatement(sql)) {
 
             statement.setDouble(1, distanceValue);
