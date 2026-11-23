@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.ComboBox?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ListView?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.layout.VBox?>
+
+<VBox xmlns="http://javafx.com/javafx/21"
+      xmlns:fx="http://javafx.com/fxml/1"
+      spacing="10"
+      prefWidth="500"
+      prefHeight="500"
+      style="-fx-font-family: 'Noto Sans CJK JP';">
+    <padding>
+        <Insets top="20" right="20" bottom="20" left="20"/>
+    </padding>
+    <children>
+        <Label fx:id="title"
+               text="Temperature Converter"/>
+        <Label fx:id="temperatureLabel"
+               text="Temperature"/>
+        <TextField fx:id="temperatureInput"
+                   promptText="Enter temperature"/>
+        <ComboBox fx:id="fromUnit"
+                  prefWidth="460"
+                  promptText="From unit"/>
+        <ComboBox fx:id="toUnit"
+                  prefWidth="460"
+                  promptText="To unit"/>
+        <Button fx:id="convertButton"
+                text="Convert"
+                prefWidth="460"/>
+        <Label fx:id="resultLabel"
+               text="Result"/>
+        <Label fx:id="historyLabel"
+               text="History"/>
+        <ListView fx:id="historyList"
+                  prefHeight="180"/>
+        <Button fx:id="speedDistanceTimeButton"
+                text="Speed, distance and time"
+                prefWidth="460"/>
+    </children>
+</VBox>
