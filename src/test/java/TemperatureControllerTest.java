@@ -12,6 +12,7 @@ import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListView;
 import javafx.scene.control.TextField;
+import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -249,6 +250,152 @@ class TemperatureControllerTest {
         });
     }
 
+    @Test
+    @EnabledIfSystemProperty(named = "runJavaFxTests", matches = "true")
+    void startButtonOpensConverterWithSelectedLocale() throws Exception {
+        TestController testController = new TestController();
+
+        runOnFxThread(() -> {
+            Stage stage = new Stage();
+            testController.start(stage);
+
+            ComboBox<String> languageChoice =
+                    field(testController, "languageChoice");
+            languageChoice.setValue("Suomi");
+            Button startButton = field(testController, "startButton");
+            startButton.fire();
+
+            assertEquals(new Locale("fi", "FI"),
+                    getField(testController, "locale"));
+            assertEquals(ResourceBundle.getBundle(
+                            "MessagesBundle", new Locale("fi", "FI"))
+                    .getString("app.title"), stage.getTitle());
+            stage.close();
+            return null;
+        });
+    }
+
+    @Test
+    @EnabledIfSystemProperty(named = "runJavaFxTests", matches = "true")
+    void initializeAddsLanguagesOnlyToLanguageView() throws Exception {
+        ComboBox<String> languageChoice = new ComboBox<>();
+        setField(controller, "languageChoice", languageChoice);
+        setField(controller, "title", null);
+        invokeNoArgs(controller, "initialize");
+
+        assertEquals(List.of("English", "Suomi", "Svenska", "日本語",
+                "العربية"), languageChoice.getItems());
+
+        setField(controller, "title", new Label());
+        invokeNoArgs(controller, "initialize");
+        assertEquals(5, languageChoice.getItems().size());
+    }
+
+    @Test
+    void defaultDaoFactoriesCreateProductionDaos() throws Exception {
+        TemperatureController target = new TemperatureController();
+        assertTrue(invokeNoArgs(target, "createTemperatureUnitDAO")
+                instanceof TemperatureUnitDAO);
+        assertTrue(invokeNoArgs(target, "createTempRecordDAO")
+                instanceof TempRecordDAO);
+        assertTrue(invokeNoArgs(target, "createSpeedDistanceTimeUnitDAO")
+                instanceof SpeedDistanceTimeUnitDAO);
+        assertTrue(invokeNoArgs(target, "createSpeedDistanceTimeDAO")
+                instanceof SpeedDistanceTimeDAO);
+    }
+
+    @Test
+    @EnabledIfSystemProperty(named = "runJavaFxTests", matches = "true")
+    void converterButtonHandlesEveryTemperatureConversion() throws Exception {
+        TestController testController = new TestController();
+        setField(testController, "locale", Locale.US);
+        setField(testController, "messages",
+                ResourceBundle.getBundle("MessagesBundle", Locale.US));
+
+        runOnFxThread(() -> {
+            Stage stage = new Stage();
+            invoke(testController, "showConverter", stage);
+            ComboBox<Unit> from = field(testController, "fromUnit");
+            ComboBox<Unit> to = field(testController, "toUnit");
+            TextField input = field(testController, "temperatureInput");
+            Button convert = field(testController, "convertButton");
+            Label result = field(testController, "resultLabel");
+
+            assertConversion(from, to, input, convert, result, 1, 2,
+                    "212.0 °F");
+            assertConversion(from, to, input, convert, result, 2, 1,
+                    "0.0 °C");
+            assertConversion(from, to, input, convert, result, 3, 1,
+                    "0.0 °C");
+            assertConversion(from, to, input, convert, result, 1, 3,
+                    "273.15 K");
+            assertConversion(from, to, input, convert, result, 2, 3,
+                    "273.15 K");
+            assertConversion(from, to, input, convert, result, 3, 2,
+                    "32.0 °F");
+
+            input.setText("not a number");
+            convert.fire();
+            assertEquals(messages().getString("error.invalid"), result.getText());
+            stage.close();
+            return null;
+        });
+    }
+
+    @Test
+    @EnabledIfSystemProperty(named = "runJavaFxTests", matches = "true")
+    void speedDistanceTimeViewHandlesInputAndDatabaseErrors() throws Exception {
+        TestController testController = new TestController();
+        setField(testController, "locale", Locale.US);
+        setField(testController, "messages",
+                ResourceBundle.getBundle("MessagesBundle", Locale.US));
+
+        runOnFxThread(() -> {
+            Stage stage = new Stage();
+            invoke(testController, "showSpeedDistanceTime", stage);
+            VBox root = (VBox) stage.getScene().getRoot();
+            TextField distance = (TextField) root.getChildren().get(1);
+            TextField time = (TextField) root.getChildren().get(4);
+            TextField speed = (TextField) root.getChildren().get(7);
+            Button save = (Button) root.getChildren().get(9);
+            Label result = (Label) root.getChildren().get(10);
+            save.fire();
+            assertEquals(messages().getString("sdt.error"), result.getText());
+
+            distance.setText("10");
+            time.setText("2");
+            speed.setText("5");
+            save.fire();
+            assertEquals(messages().getString("sdt.success"), result.getText());
+            stage.close();
+            return null;
+        });
+    }
+
+    private static void assertConversion(ComboBox<Unit> from,
+                                         ComboBox<Unit> to,
+                                         TextField input,
+                                         Button convert,
+                                         Label result,
+                                         int fromId,
+                                         int toId,
+                                         String expected) {
+        from.setValue(from.getItems().get(fromId - 1));
+        to.setValue(to.getItems().get(toId - 1));
+        input.setText(switch (fromId * 10 + toId) {
+            case 12 -> "100";
+            case 21 -> "32";
+            case 31 -> "273.15";
+            case 13 -> "0";
+            case 23 -> "32";
+            case 32 -> "273.15";
+            default -> "0";
+        });
+        convert.fire();
+        assertTrue(result.getText().endsWith(expected),
+                result.getText());
+    }
+
     private ResourceBundle messages() {
         return ResourceBundle.getBundle("MessagesBundle", Locale.US);
     }
@@ -274,6 +421,22 @@ class TemperatureControllerTest {
         Field field = TemperatureController.class.getDeclaredField(name);
         field.setAccessible(true);
         field.set(target, value);
+    }
+
+    private static Object getField(Object target, String name)
+            throws ReflectiveOperationException {
+        Field field = TemperatureController.class.getDeclaredField(name);
+        field.setAccessible(true);
+        return field.get(target);
+    }
+
+    private static Object invokeNoArgs(TemperatureController target,
+                                      String methodName)
+            throws ReflectiveOperationException {
+        Method method = TemperatureController.class
+                .getDeclaredMethod(methodName);
+        method.setAccessible(true);
+        return method.invoke(target);
     }
 
     @SuppressWarnings("unchecked")
