@@ -135,8 +135,8 @@ public class TemperatureController {
     private void showConverter(Stage stage) {
 
         TemperatureConverter converter = new TemperatureConverter();
-        TemperatureUnitDAO unitDAO = new TemperatureUnitDAO();
-        TempRecordDAO recordDAO = new TempRecordDAO();
+        TemperatureUnitDAO unitDAO = createTemperatureUnitDAO();
+        TempRecordDAO recordDAO = createTempRecordDAO();
         
         Parent root;
         try {
@@ -303,10 +303,10 @@ public class TemperatureController {
     private void showSpeedDistanceTime(Stage stage) {
 
         SpeedDistanceTimeUnitDAO unitDAO =
-                new SpeedDistanceTimeUnitDAO();
+                createSpeedDistanceTimeUnitDAO();
 
         SpeedDistanceTimeDAO recordDAO =
-                new SpeedDistanceTimeDAO();
+                createSpeedDistanceTimeDAO();
 
         Label distanceLabel = new Label(messages.getString("sdt.distance"));
         TextField distanceInput = new TextField();
@@ -384,6 +384,22 @@ public class TemperatureController {
         stage.setTitle(messages.getString("sdt.title"));
         stage.setScene(new Scene(root, 400, 500));
         stage.show();
+    }
+
+    protected TemperatureUnitDAO createTemperatureUnitDAO() {
+        return new TemperatureUnitDAO();
+    }
+
+    protected TempRecordDAO createTempRecordDAO() {
+        return new TempRecordDAO();
+    }
+
+    protected SpeedDistanceTimeUnitDAO createSpeedDistanceTimeUnitDAO() {
+        return new SpeedDistanceTimeUnitDAO();
+    }
+
+    protected SpeedDistanceTimeDAO createSpeedDistanceTimeDAO() {
+        return new SpeedDistanceTimeDAO();
     }
 
 
