@@ -43,6 +43,7 @@ class TemperatureControllerTest {
         }
         try {
             Platform.startup(() -> {
+                Platform.setImplicitExit(false);
             });
             toolkitStarted = true;
         } catch (IllegalStateException alreadyStarted) {
@@ -240,8 +241,8 @@ class TemperatureControllerTest {
             Button convertButton = field(testController, "convertButton");
             TextField temperatureInput = field(testController,
                     "temperatureInput");
-            assertEquals("Result", resultLabel.getText());
-            assertEquals("History", historyLabel.getText());
+            assertEquals(messages().getString("result.label"),
+                    resultLabel.getText());            assertEquals("Last 5 conversions", historyLabel.getText());
             assertFalse(convertButton.getText().isBlank());
             assertEquals("", temperatureInput.getText());
 
@@ -504,12 +505,48 @@ class TemperatureControllerTest {
 
         @Override
         protected SpeedDistanceTimeUnitDAO createSpeedDistanceTimeUnitDAO() {
-            return new SpeedDistanceTimeUnitDAO();
+            return new TestSpeedDistanceTimeUnitDAO();
         }
 
         @Override
         protected SpeedDistanceTimeDAO createSpeedDistanceTimeDAO() {
-            return new SpeedDistanceTimeDAO();
+            return new TestSpeedDistanceTimeDAO();
+        }
+    }
+
+    private static class TestSpeedDistanceTimeDAO extends SpeedDistanceTimeDAO {
+
+        @Override
+        public void saveRecord(double distanceValue, int distanceUnitId,
+                               double timeValue, int timeUnitId,
+                               double speedValue, int speedUnitId) {
+            // Ei tallenneta oikeaan tietokantaan testissä.
+        }
+    }
+    private static final class TestSpeedDistanceTimeUnitDAO
+            extends SpeedDistanceTimeUnitDAO {
+
+        @Override
+        public List<Unit> getUnits(String unitType, String language) {
+            if (unitType.equals("distance")) {
+                return List.of(
+                        new Unit(1, "Meter", "Meter"),
+                        new Unit(2, "Kilometer", "Kilometer"),
+                        new Unit(3, "Mile", "Mile")
+                );
+            } else if (unitType.equals("time")) {
+                return List.of(
+                        new Unit(4, "Second", "Second"),
+                        new Unit(5, "Minute", "Minute"),
+                        new Unit(6, "Hour", "Hour")
+                );
+            } else {
+                return List.of(
+                        new Unit(7, "Meters per second", "Meters per second"),
+                        new Unit(8, "Kilometers per hour", "Kilometers per hour"),
+                        new Unit(9, "Miles per hour", "Miles per hour")
+                );
+            }
         }
     }
 }
